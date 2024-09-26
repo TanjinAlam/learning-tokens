@@ -19,15 +19,14 @@ const {
   SEPOLIA_API_KEY,
   POLYGON_RPC_URL,
   POLYGON_API_KEY,
-  POLYGON_PRIV_KEY
-
+  POLYGON_PRIV_KEY,
 }: any = process.env;
 const config: HardhatUserConfig = {
   networks: {
-    // localhost: {
-    //   url: "http://localhost:8545", // Replace with your local Hardhat node URL
-    //   chainId: 31337, // Replace with the chain ID of your local Hardhat network
-    // },
+    localhost: {
+      url: "http://127.0.0.1:8545", // Replace with your local Hardhat node URL
+      chainId: 31337, // Replace with the chain ID of your local Hardhat network
+    },
     // besu: {
     //   accounts: [SUPER_ADMIN_PRI_KEY],
     //   url: "http://localhost:8545",

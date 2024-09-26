@@ -29,7 +29,7 @@ const validationSchema = object().shape({
   ),
 });
 
-const CourseNew = () => {  
+const CourseNew = () => {
   const formikRef = useRef<FormikProps<any>>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -78,7 +78,10 @@ const CourseNew = () => {
           .then((res) => {
             setUploading(false);
             toast.success("file is uploaded to IPFS");
-            formik.setFieldValue('scoringGuideGradingPolicyBook', PINTAURL+res.data.IpfsHash)
+            formik.setFieldValue(
+              "scoringGuideGradingPolicyBook",
+              PINTAURL + res.data.IpfsHash
+            );
           });
       } catch (error) {
         toast.error("There was a problem on uploading the file to IPFS");
@@ -98,7 +101,7 @@ const CourseNew = () => {
           const sheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(sheet);
           const learnerAddress = jsonData.map(
-            (learner: any) => learner.learner_wallet
+            (learner: any) => learner.learnerAddress
           );
           formik.setFieldValue("learnerAddress", learnerAddress);
         }
@@ -166,12 +169,12 @@ const CourseNew = () => {
                   accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                 />
               </div>
-              { uploading && 
+              {uploading && (
                 <div className="bg-green-300 text-[#013A44] rounded p-3 mt-2 relative">
                   <div className="absolute top-0 left-0 h-full w-1 bg-[#013A44]"></div>
                   <div>Your file is being uploaded to IPFS please wait...</div>
                 </div>
-              }
+              )}
             </div>
             <Button
               size="small"
