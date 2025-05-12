@@ -103,10 +103,6 @@ export class RegisterLearnernDTO {
 
     @IsString()
     @IsNotEmpty()
-    publicAddress: string
-
-    @IsString()
-    @IsNotEmpty()
     latitude: string
 
     @IsString()
@@ -137,12 +133,7 @@ export class RegisterInstructorDTO {
     @MinLength(8)
     readonly password: string
 
-    @IsOptional()
     public type: string
-
-    @IsString()
-    @IsNotEmpty()
-    publicAddress: string
 }
 
 export class InstructorLoginRequestDto {

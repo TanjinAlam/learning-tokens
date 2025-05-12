@@ -33,8 +33,6 @@ export const getWallet = async (type: string, id: number) => {
             .replace(':walletId', _id)
             .replace(':accountIndex', id.toString())
     }
-
     const result = await axios.get(url)
-    console.log(type, id, result.data)
     return result.data
 }

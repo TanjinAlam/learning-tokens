@@ -1,5 +1,7 @@
 import { Exclude } from 'class-transformer'
 import { IsArray, IsEmail, IsString } from 'class-validator'
+import { InstructorInstitution } from 'src/modules/instructors/entities/instructor-institution.entity'
+import { Instructor } from 'src/modules/instructors/entities/instructor.entity'
 import { Preevent } from 'src/modules/preevent/entities/preevent.entity'
 import { Role } from 'src/modules/role/entities/role.entity'
 import {
@@ -41,7 +43,7 @@ export class Institution extends BaseEntity {
     @Column({ type: 'boolean', default: false })
     status: boolean
 
-    @Column({ type: 'varchar', length: 50, nullable: true, unique: true })
+    @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
     publicAddress: string
 
     @Column({ type: 'varchar', length: 50, nullable: true })
@@ -70,4 +72,10 @@ export class Institution extends BaseEntity {
 
     @OneToMany(() => Preevent, (preevent) => preevent.institution)
     preevents: Preevent[]
+
+    @OneToMany(
+        () => InstructorInstitution,
+        (instructorInstitution) => instructorInstitution.institution
+    )
+    instructorInstitutions: InstructorInstitution[]
 }

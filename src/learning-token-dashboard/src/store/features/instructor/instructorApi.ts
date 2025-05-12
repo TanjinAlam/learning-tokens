@@ -12,6 +12,14 @@ export const instructorApi = apiSlice
         }),
         invalidatesTags: ["instructorAuth"],
       }),
+      smartContractCallInstitution: builder.mutation<any, any>({
+        query: (body) => ({
+          url: "/smartcontract/smartcontract",
+          method: "POST",
+          body,
+        }),
+        invalidatesTags: ["instructorAuth"],
+      }),
       registerInstructor: builder.mutation<any, any>({
         query: (body) => ({
           url: "/auth/instructor-register",
@@ -23,5 +31,8 @@ export const instructorApi = apiSlice
     }),
   });
 
-export const { useLoginInstructorMutation, useRegisterInstructorMutation } =
-  instructorApi;
+export const {
+  useLoginInstructorMutation,
+  useRegisterInstructorMutation,
+  useSmartContractCallInstitutionMutation,
+} = instructorApi;

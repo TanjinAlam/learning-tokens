@@ -30,7 +30,7 @@ function Dashboard() {
     try {
       setLoadingSpinner(true);
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/smartcontract/register-actor`, {
-        role: auth.user.role,
+        type: auth.user.role,
         id: auth.user.id,
         functionName: SmartcontractFunctionsEnum.GET_LEARNER_TOKEN_METADATA,
         params: [auth.user.publicAddress],

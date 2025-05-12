@@ -1,4 +1,4 @@
-import { Module, Post } from '@nestjs/common'
+import { Global, Module, Post } from '@nestjs/common'
 import { SmartcontractService } from './smartcontract.service'
 import { SmartcontractController } from './smartcontract.controller'
 import { ConfigService } from '@nestjs/config'
@@ -10,7 +10,9 @@ import { Institution } from '../institutions/entities/institution.entity'
 import { Instructor } from '../instructors/entities/instructor.entity'
 import { OnlineEvent } from '../event/entities/event.entity'
 import { ScoringGuide } from '../event/entities/scoring-guide.entity'
+import { InstructorInstitution } from '../instructors/entities/instructor-institution.entity'
 
+@Global()
 @Module({
     imports: [
         TypeOrmModule.forFeature([
@@ -20,7 +22,8 @@ import { ScoringGuide } from '../event/entities/scoring-guide.entity'
             Instructor,
             Postevent,
             ScoringGuide,
-            OnlineEvent
+            OnlineEvent,
+            InstructorInstitution
         ])
     ],
     controllers: [SmartcontractController],

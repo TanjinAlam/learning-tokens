@@ -6,6 +6,7 @@ import {
     Param,
     Patch,
     Query,
+    Req,
     UseGuards
 } from '@nestjs/common'
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
@@ -18,12 +19,11 @@ export class AdminController {
     @UseGuards(JwtAuthGuard)
     @Get('institution-list')
     private async get_institution_list(
-        @Query('page') page = 1, // Set default value to 1
-        @Query('limit') limit = 10 // Set default value to 10
+        @Query('page') page = 1,
+        @Query('limit') limit = 10,
+        @Req() req: any
     ) {
         try {
-            // console.log(paginationQuery)
-            // const { page, limit } = paginationQuery
             const result = await this.adminService.findAll(
                 page,
                 limit,

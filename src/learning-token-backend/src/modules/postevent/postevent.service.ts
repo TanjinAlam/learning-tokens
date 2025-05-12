@@ -127,7 +127,7 @@ export class PosteventService {
                             registeredLearner
                         )
                         body = {
-                            role: 'learner',
+                            type: 'learner',
                             id: registeredLearner.id,
                             functionName:
                                 SmartcontractFunctionsEnum.REGISTER_LEARNER,
@@ -142,7 +142,10 @@ export class PosteventService {
                                     : '123.123'
                             ]
                         }
-                        await this.smartContractService.onboardingActor(body)
+                        await this.smartContractService.onboardingActor(
+                            body,
+                            {}
+                        )
                     }
                     //storing the post event user in the table
                     await transactionalEntityManager.save(Postevent, postevent)

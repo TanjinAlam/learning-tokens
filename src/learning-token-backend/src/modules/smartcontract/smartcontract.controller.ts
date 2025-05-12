@@ -44,17 +44,23 @@ export class SmartcontractController {
     }
 
     @Post('smartcontract')
-    async getInstitutionId(@Body() body: any) {
+    @UseGuards(JwtAuthGuard)
+    async getInstitutionId(@Body() body: any, @Req() req: any) {
         const result = await this.smartcontractService.callContractFunction(
             body.functionName,
-            body
+            body,
+            req.user
         )
         return result
     }
 
     @Post('register-actor')
-    async registerInstitution(@Body() body: any) {
-        const result = await this.smartcontractService.onboardingActor(body)
+    @UseGuards(JwtAuthGuard)
+    async registerInstitution(@Body() body: any, @Req() req: any) {
+        const result = await this.smartcontractService.onboardingActor(
+            body,
+            req.user
+        )
         return result
     }
 

@@ -1,7 +1,9 @@
 import { apiSlice } from "../api/apiSlice";
 
 export const adminApi = apiSlice
-  .enhanceEndpoints({ addTagTypes: ["AdminAuth", "Institution", "Instructor","Learner"] })
+  .enhanceEndpoints({
+    addTagTypes: ["AdminAuth", "Institution", "Instructor", "Learner"],
+  })
   .injectEndpoints({
     endpoints: (builder) => ({
       loginAdmin: builder.mutation<any, any>({
@@ -97,5 +99,5 @@ export const {
   useLazyGetInstructorQuery,
   useLazyGetLearnerListQuery,
   useUpdateInstructorStatusMutation,
-  useGetLearnerListQuery
+  useGetLearnerListQuery,
 } = adminApi;

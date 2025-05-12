@@ -6,9 +6,13 @@ import Button from "../../components/Button";
 import SelectInput from "../../components/SelectInput";
 import TextInput from "../../components/TextInput";
 import { useGetInstitutionQuery } from "../../store/features/admin/adminApi";
-import { getRandomFileName, initWeb3 } from "../../utils";
+import { getRandomFileName } from "../../utils";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useSmartContractCallInstitutionMutation } from "../../store/features/instructor/instructorApi";
+import { UserType } from "../../enums/roles.enum";
+import { useSelector } from "react-redux";
+import { RootState } from "../../store";
 
 const JWT = import.meta.env.VITE_PINATA_API_KEY;
 const PINTAURL = import.meta.env.VITE_PINATA_URL;
@@ -29,24 +33,31 @@ const validationSchema = object().shape({
   ),
 });
 
-const CourseNew = () => {  
+const CourseNew = () => {
   const formikRef = useRef<FormikProps<any>>(null);
   const [uploading, setUploading] = useState(false);
-
+  const [smartContractCallInstitution] =
+    useSmartContractCallInstitutionMutation();
   const { data: institutionList, isLoading } = useGetInstitutionQuery();
+  const auth = useSelector((state: RootState) => state.auth);
 
   const handleSubmit = async (values: any) => {
-    const contract = await initWeb3();
-    const tx = await contract!.createCourse(
-      values.institution_address,
-      values.courseName,
-      Date.now(),
-      values.learnerAddress,
-      values.scoringGuideGradingPolicyBook
-    );
-    if (tx) {
-      toast.success("Course Created");
-    }
+    console.log(values);
+    smartContractCallInstitution({
+      isAdmin: false,
+      isView: false,
+      isWrite: true,
+      type: UserType.INSTRUCTOR,
+      id: auth.user.id,
+      functionName: "createCourse",
+      params: [
+        values.institution_address,
+        values.courseName,
+        Date.now(),
+        values.learnerAddress,
+        values.scoringGuideGradingPolicyBook,
+      ],
+    });
   };
 
   const handlePinataUpload = (e: any, formik: any) => {
@@ -78,7 +89,10 @@ const CourseNew = () => {
           .then((res) => {
             setUploading(false);
             toast.success("file is uploaded to IPFS");
-            formik.setFieldValue('scoringGuideGradingPolicyBook', PINTAURL+res.data.IpfsHash)
+            formik.setFieldValue(
+              "scoringGuideGradingPolicyBook",
+              PINTAURL + res.data.IpfsHash
+            );
           });
       } catch (error) {
         toast.error("There was a problem on uploading the file to IPFS");
@@ -88,6 +102,7 @@ const CourseNew = () => {
 
   const handleFileChange = (e: any, formik: any) => {
     const file = e.target.files[0];
+    console.log("FILE", file);
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -97,10 +112,18 @@ const CourseNew = () => {
           const sheetName = workbook.SheetNames[0];
           const sheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(sheet);
-          const learnerAddress = jsonData.map(
-            (learner: any) => learner.learner_wallet
-          );
-          formik.setFieldValue("learnerAddress", learnerAddress);
+          // Extract wallet addresses properly
+          const learnerAddresses = jsonData
+            .map((learner: any) => {
+              // Assuming the column in your Excel is called "learner_wallet"
+              return learner.learnerAddress;
+            })
+            .filter((address) => address); // Filter out any undefined/null values
+
+          console.log("learnerAddresses", learnerAddresses);
+
+          // Set the field value OUTSIDE the map function
+          formik.setFieldValue("learnerAddress", learnerAddresses);
         }
       };
       reader.readAsArrayBuffer(file);
@@ -166,12 +189,12 @@ const CourseNew = () => {
                   accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                 />
               </div>
-              { uploading && 
+              {uploading && (
                 <div className="bg-green-300 text-[#013A44] rounded p-3 mt-2 relative">
                   <div className="absolute top-0 left-0 h-full w-1 bg-[#013A44]"></div>
                   <div>Your file is being uploaded to IPFS please wait...</div>
                 </div>
-              }
+              )}
             </div>
             <Button
               size="small"

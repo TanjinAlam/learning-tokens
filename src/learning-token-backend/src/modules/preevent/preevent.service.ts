@@ -162,13 +162,16 @@ export class PreeventService {
                     )
                     try {
                         body = {
-                            role: 'instructor',
+                            type: 'instructor',
                             id: registeredInstructor.id,
                             functionName:
                                 SmartcontractFunctionsEnum.REGISTER_INSTRUCTOR,
                             params: [registeredInstructor.name, createdAt]
                         }
-                        await this.smartContractService.onboardingActor(body)
+                        await this.smartContractService.onboardingActor(
+                            body,
+                            {}
+                        )
                         // Proceed only if the first call succeeds
                         await transactionalEntityManager.update(
                             Instructor,
@@ -176,7 +179,7 @@ export class PreeventService {
                             { status: true }
                         )
                         body = {
-                            role: 'institution',
+                            type: 'institution',
                             id: institution.id,
                             functionName:
                                 SmartcontractFunctionsEnum.ADD_INSTRUCTOR_TO_INSTITUTION,
@@ -185,7 +188,10 @@ export class PreeventService {
                                 createdAt
                             ]
                         }
-                        await this.smartContractService.onboardingActor(body)
+                        await this.smartContractService.onboardingActor(
+                            body,
+                            {}
+                        )
                     } catch (error) {
                         console.error('Error during onboarding:', error)
                         throw new BadRequestException('Error during onboarding')

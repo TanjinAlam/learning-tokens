@@ -14,7 +14,6 @@ export class AccessControlGuard implements CanActivate {
         )
         const request = context.switchToHttp().getRequest()
 
-        console.log('request', request.user)
         if (request.user?.role) {
             // if (request.user.role.isAdmin) {
             //     return requiredRoles.indexOf(RoleEnum.ADMIN) > -1 ? true : false

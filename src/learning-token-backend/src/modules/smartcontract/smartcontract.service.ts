@@ -21,6 +21,8 @@ import { CreateInstructorDto } from '../instructors/dto/create-instructor.dto'
 import * as etherjs from 'ethers'
 import { OnlineEvent } from '../event/entities/event.entity'
 import { ScoringGuide } from '../event/entities/scoring-guide.entity'
+import { delay } from 'src/config/helper'
+import { InstructorInstitution } from '../instructors/entities/instructor-institution.entity'
 declare global {
     interface BigInt {
         toJSON(): string // or `number` if precision loss is acceptable
@@ -53,6 +55,8 @@ export class SmartcontractService {
     private scoringGuideRepository: Repository<ScoringGuide>
     @InjectRepository(OnlineEvent)
     private onlineEventRepository: Repository<OnlineEvent>
+    @InjectRepository(InstructorInstitution)
+    private readonly instructorInstitutionRepository: Repository<InstructorInstitution>
 
     constructor(private readonly configService: ConfigService) {
         this.contractAddress =
@@ -69,6 +73,12 @@ export class SmartcontractService {
         )
         this.learnerWalletId = this.configService.get<string>(
             'LEARNER_HD_WALLET_ID'
+        )
+        this.provider = new ethers.JsonRpcProvider(
+            this.configService.get<string>(
+                'JSON_RPC_URL',
+                'http://localhost:8545'
+            )
         )
     }
 
@@ -92,30 +102,19 @@ export class SmartcontractService {
         return `This action removes a #${id} smartcontract`
     }
 
-    async onboardingActor(body): Promise<any> {
+    async onboardingActor(body, user): Promise<any> {
         try {
-            const wallet = await getWallet(body.role, body.id)
+            console.log('body', body)
+            const wallet = await getWallet(body.type, body.id)
             const actorPrivateKey = wallet.privateKey
             const contractAddress = this.contractAddress
-            const rpcUrl = this.configService.get<string>(
-                'JSON_RPC_URL',
-                'http://localhost:8545'
-            )
+
             let messageResponse = ''
 
-            const provider = new ethers.JsonRpcProvider(rpcUrl)
-
-            const signer = new ethers.Wallet(actorPrivateKey, provider)
+            const signer = new ethers.Wallet(actorPrivateKey, this.provider)
             const contract = new ethers.Contract(contractAddress, abi, signer)
-
-            let result = await contract[body.functionName](...body.params)
-            //external sleep for 10 seconds
-            await new Promise((r) => setTimeout(r, 10000))
-            // Convert BigInt values to strings if needed
-
-            // const processedResult = this.processResult(result)
-            // console.log('View Function Result:', processedResult)
-
+            const result = await contract[body.functionName](...body.params)
+            delay(10000)
             if (
                 body.functionName ===
                 SmartcontractFunctionsEnum.REGISTER_INSTITUTION
@@ -129,6 +128,23 @@ export class SmartcontractService {
                     }
                 )
                 messageResponse = 'Institution onboarded successfully'
+
+                //update institution instructor
+                if (user) {
+                    const institutionInstructor = new InstructorInstitution()
+                    institutionInstructor.instructor =
+                        await this.instructorRepository.findOne({
+                            where: {
+                                publicAddress: body.params[1] // public address of instructor
+                            }
+                        })
+                    institutionInstructor.institution =
+                        await this.institutionRepository.findOne({
+                            where: {
+                                id: user.id // institution id
+                            }
+                        })
+                }
             } else if (
                 body.functionName ===
                 SmartcontractFunctionsEnum.REGISTER_INSTRUCTOR
@@ -171,11 +187,14 @@ export class SmartcontractService {
         }
     }
 
-    async callContractFunction(functionName: string, body?: any): Promise<any> {
+    async callContractFunction(
+        functionName: string,
+        body?: any,
+        user?: any
+    ): Promise<any> {
         try {
-            // Create a contract instance
+            console.log('body', body)
             const contractAddress = this.contractAddress
-            //when we have to call from admin permission
             if (body.isAdmin && body.isWrite) {
                 const adminPrivateKey = this.adminPrivateKey
                 const signer = new ethers.Wallet(adminPrivateKey, this.provider)
@@ -186,10 +205,12 @@ export class SmartcontractService {
                 )
                 const result = await contract[body.functionName](...body.params)
                 // Convert BigInt values to strings if needed
+                delay(3000)
                 const processedResult = this.processResult(result)
                 return processedResult
             }
             if (body.isWrite) {
+                console.log('bodybodybody', body)
                 const wallet = await getWallet(body.type, body.id)
                 const adminPrivateKey = wallet.privateKey
                 const signer = new ethers.Wallet(adminPrivateKey, this.provider)
@@ -199,8 +220,31 @@ export class SmartcontractService {
                     signer
                 )
                 const result = await contract[body.functionName](...body.params)
-                // Convert BigInt values to strings if needed
+                delay(3000)
+                if (body.functionName == 'addInstructorToInstitution') {
+                    const instructor = await this.instructorRepository.findOne({
+                        where: {
+                            id: body.id
+                        }
+                    })
+                    const institution =
+                        await this.institutionRepository.findOne({
+                            where: {
+                                id: user.id
+                            }
+                        })
+                    await this.instructorInstitutionRepository.update(
+                        {
+                            instructor: instructor,
+                            institution: institution
+                        },
+                        {
+                            status: true
+                        }
+                    )
+                }
                 const processedResult = this.processResult(result)
+                console.log('processedResult', processedResult)
                 return processedResult
             }
             if (body.isView) {
@@ -210,6 +254,7 @@ export class SmartcontractService {
                     this.provider
                 )
                 const result = await contract[body.functionName](...body.params)
+                delay(3000)
                 console.log('View Function Result:', result)
             }
         } catch (err) {

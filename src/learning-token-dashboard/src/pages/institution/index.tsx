@@ -9,18 +9,23 @@ import usePagination from "../../hooks/usePagination";
 import Pagination from "../../components/Pagination";
 import { LoaderIcon } from "react-hot-toast";
 const { Column, HeaderCell, Cell } = Table;
-import { RoleEnum } from "../../enums/roles.enum";
+import { UserType } from "../../enums/roles.enum";
 import { SmartcontractFunctionsEnum } from "../../enums/smartcontract-functions.enum";
+import { RootState } from "../../store";
+import { useSelector } from "react-redux";
 
 const Institution: React.FC = () => {
   const [statusLoading, setStatusLoading] = useState({
     id: null,
     loading: false,
   });
+
   const [getInstitution, { data, isLoading }] = useLazyGetInstitutionQuery();
   const [updateInstitutionStatus] = useUpdateInstitutionStatusMutation();
-  const [smartContractCallRegisterActor] = useSmartContractCallRegisterActorMutation();
+  const [smartContractCallRegisterActor] =
+    useSmartContractCallRegisterActorMutation();
   const pagination = usePagination();
+  const auth = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     getInstitution({
@@ -31,12 +36,12 @@ const Institution: React.FC = () => {
 
   const toggleStatus = async (rowData: any) => {
     setStatusLoading({ id: rowData.id, loading: true });
-  
+
     try {
       // Await the smart contract call
       await smartContractCallRegisterActor({
-        role: RoleEnum.ADMIN,
-        id: 1, //HD Wallet accountIndex of Admin
+        type: UserType.ADMIN,
+        id: auth.user.id, //HD Wallet accountIndex of Admin
         functionName: SmartcontractFunctionsEnum.REGISTER_INSTITUTION,
         params: [
           rowData.name,
@@ -46,9 +51,11 @@ const Institution: React.FC = () => {
           rowData.longitude,
         ],
       });
-  
+
       // Update the institution status
-      const updatedInstitution = await updateInstitutionStatus(rowData).unwrap();
+      const updatedInstitution = await updateInstitutionStatus(
+        rowData
+      ).unwrap();
       console.log(`Institution updated: ${JSON.stringify(updatedInstitution)}`);
     } catch (error) {
       console.error(`Error updating institution status: ${error}`);

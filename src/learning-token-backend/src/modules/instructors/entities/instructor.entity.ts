@@ -13,6 +13,8 @@ import {
     ManyToOne
 } from 'typeorm'
 import { Role } from 'src/modules/role/entities/role.entity'
+import { Institution } from 'src/modules/institutions/entities/institution.entity'
+import { InstructorInstitution } from './instructor-institution.entity'
 
 @Entity()
 export class Instructor extends BaseEntity {
@@ -61,5 +63,11 @@ export class Instructor extends BaseEntity {
     role: Role
 
     @Column({ type: 'int', nullable: false })
-    roleId: number;
+    roleId: number
+
+    @OneToMany(
+        () => InstructorInstitution,
+        (instructorInstitution) => instructorInstitution.instructor
+    )
+    instructorInstitutions: InstructorInstitution[]
 }

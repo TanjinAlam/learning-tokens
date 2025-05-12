@@ -17,7 +17,7 @@ export class AdminService {
         private readonly instructorRepository: Repository<Instructor>,
         @InjectRepository(Learner)
         private readonly learnerRepository: Repository<Learner>
-    ) { }
+    ) {}
 
     async findAll(page: number, limit: number, type: string) {
         if (type == 'Institution') {
@@ -28,7 +28,7 @@ export class AdminService {
                 .skip(offset)
                 .take(limit)
                 .orderBy('institution.id', 'ASC')
-                .getManyAndCount();
+                .getManyAndCount()
 
             const totalPages = Math.ceil(totalCount / limit)
 
@@ -99,8 +99,8 @@ export class AdminService {
     async update(uuid: number, type: string) {
         if (type == 'Institution') {
             const institutionDetails =
-                await this.institutionRepository.findOneBy({ id: uuid });
-            console.log('Activate institution:', institutionDetails);
+                await this.institutionRepository.findOneBy({ id: uuid })
+            console.log('Activate institution:', institutionDetails)
             // fix the toggling since button is disabled once activated
             if (!institutionDetails.status) {
                 institutionDetails.status = true

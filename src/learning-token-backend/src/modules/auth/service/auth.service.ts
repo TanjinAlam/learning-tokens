@@ -1,4 +1,9 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common'
+import {
+    BadRequestException,
+    ForbiddenException,
+    Inject,
+    Injectable
+} from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Institution } from 'src/modules/institutions/entities/institution.entity'
 import { Instructor } from 'src/modules/instructors/entities/instructor.entity'
@@ -13,6 +18,8 @@ import { JwtService } from './jwt.service'
 import { getWallet } from 'src/utils/kaledio'
 import { User } from 'src/modules/admins/entities/user.entity'
 import { Role } from 'src/modules/role/entities/role.entity'
+import { SmartcontractFunctionsEnum } from 'src/modules/smartcontract/enums/smartcontract-functions.enum'
+import { SmartcontractService } from 'src/modules/smartcontract/smartcontract.service'
 
 @Injectable()
 export class AuthService {
@@ -24,11 +31,12 @@ export class AuthService {
         @InjectRepository(Learner)
         private readonly learnerRepository: Repository<Learner>,
         @InjectRepository(Instructor)
-        private readonly insturctorRepository: Repository<Instructor>,
+        private readonly instructorRepository: Repository<Instructor>,
         @Inject(JwtService)
         private readonly jwtService: JwtService,
         @InjectRepository(Role)
-        private readonly roleRepository: Repository<Role>
+        private readonly roleRepository: Repository<Role>,
+        private readonly smartContractService: SmartcontractService
     ) {}
 
     /**
@@ -42,82 +50,142 @@ export class AuthService {
         latitude,
         longitude
     }: any) {
-        if (type == 'Admin') {
-            const user = new User()
-            user.name = name
-            user.email = email
-            user.password = this.jwtService.encodePassword(password)
-            const registeredUser = await this.userRepository.save(user)
-            return {
-                id: registeredUser.id,
-                name: registeredUser.name,
-                email: registeredUser.email,
-                token: null,
-                createdAt: registeredUser.createdAt,
-                updatedAt: registeredUser.updatedAt
-            }
-        } else if (type == 'Institution') {
-            const user = new Institution()
-            user.name = name
-            user.email = email
-            user.password = this.jwtService.encodePassword(password)
-            user.latitude = latitude
-            user.longitude = longitude
-
-            const role = await this.roleRepository.findOne({
-                where: {
-                    name: 'institution'
+        try {
+            if (type == 'Admin') {
+                const user = new User()
+                user.name = name
+                user.email = email
+                user.password = this.jwtService.encodePassword(password)
+                const registeredUser = await this.userRepository.save(user)
+                return {
+                    id: registeredUser.id,
+                    name: registeredUser.name,
+                    email: registeredUser.email,
+                    token: null,
+                    createdAt: registeredUser.createdAt,
+                    updatedAt: registeredUser.updatedAt
                 }
-            })
-            user.roleId = role.id // default to institution
+            } else if (type == 'Institution') {
+                const user = new Institution()
+                user.name = name
+                user.email = email
+                user.password = this.jwtService.encodePassword(password)
+                user.latitude = latitude
+                user.longitude = longitude
 
-            const registeredUser = await this.institutionRepository.save(user)
-            const wallet = await getWallet('institution', registeredUser.id)
-            await this.institutionRepository.update(registeredUser.id, {
-                publicAddress: wallet.address,
-                role: role
-            })
-            return {
-                id: registeredUser.id,
-                name: registeredUser.name,
-                email: registeredUser.email,
-                token: null,
-                createdAt: registeredUser.createdAt,
-                updatedAt: registeredUser.updatedAt
+                const role = await this.roleRepository.findOne({
+                    where: {
+                        name: 'institution'
+                    }
+                })
+                user.roleId = role.id // default to institution
+
+                const registeredUser = await this.institutionRepository.save(
+                    user
+                )
+                const wallet = await getWallet('institution', registeredUser.id)
+                await this.institutionRepository.update(registeredUser.id, {
+                    publicAddress: wallet.address,
+                    role: role
+                })
+                return {
+                    id: registeredUser.id,
+                    name: registeredUser.name,
+                    email: registeredUser.email,
+                    token: null,
+                    createdAt: registeredUser.createdAt,
+                    updatedAt: registeredUser.updatedAt
+                }
+                //no longer registering from the api
+            } else if (type == 'Learner') {
+                const user = new Learner()
+                user.name = name
+                user.email = email
+                user.password = this.jwtService.encodePassword(password)
+
+                const role = await this.roleRepository.findOne({
+                    where: {
+                        name: 'learner'
+                    }
+                })
+                user.role = role // default to institution
+                user.latitude = latitude
+                user.longitude = longitude
+                const registeredUser = await this.learnerRepository.save(user)
+
+                const wallet = await getWallet('learner', registeredUser.id)
+                await this.learnerRepository.update(registeredUser.id, {
+                    publicAddress: wallet.address
+                })
+                const body = {
+                    type: 'learner',
+                    id: registeredUser.id,
+                    functionName: SmartcontractFunctionsEnum.REGISTER_LEARNER,
+                    params: [
+                        registeredUser.name,
+                        new Date(registeredUser.createdAt).getTime(),
+                        latitude,
+                        longitude
+                    ]
+                }
+                body.type = 'learner'
+                await this.smartContractService.onboardingActor(body, {})
+
+                return {
+                    id: registeredUser.id,
+                    name: registeredUser.name,
+                    email: registeredUser.email,
+                    token: null,
+                    createdAt: registeredUser.createdAt,
+                    updatedAt: registeredUser.updatedAt
+                }
+            } else if (type == 'Instructor') {
+                const user = new Instructor()
+                user.name = name
+                user.email = email
+                user.password = this.jwtService.encodePassword(password)
+
+                const role = await this.roleRepository.findOne({
+                    where: {
+                        name: 'instructor'
+                    }
+                })
+
+                user.roleId = role.id // default to institution
+                const registeredUser = await this.instructorRepository.save(
+                    user
+                )
+                const wallet = await getWallet('instructor', registeredUser.id)
+                await this.instructorRepository.update(registeredUser.id, {
+                    publicAddress: wallet.address,
+                    role: role
+                })
+                console.log(
+                    '  new Date(registeredUser.createdAt).getTime()',
+                    new Date(registeredUser.createdAt).getTime()
+                )
+                const body = {
+                    type: 'instructor',
+                    id: registeredUser.id,
+                    functionName:
+                        SmartcontractFunctionsEnum.REGISTER_INSTRUCTOR,
+                    params: [
+                        registeredUser.name,
+                        new Date(registeredUser.createdAt).getTime()
+                    ]
+                }
+                await this.smartContractService.onboardingActor(body, {})
+                return {
+                    id: registeredUser.id,
+                    name: registeredUser.name,
+                    email: registeredUser.email,
+                    token: null,
+                    createdAt: registeredUser.createdAt,
+                    updatedAt: registeredUser.updatedAt
+                }
             }
-            //no longer registering from the api
-        } else if (type == 'Learner') {
-            const user = new Learner()
-            user.name = name
-            user.email = email
-            // user.publicAddress = publicAddress
-            user.password = this.jwtService.encodePassword(password)
-            user.latitude = latitude
-            user.longitude = longitude
-            const registeredUser = await this.learnerRepository.save(user)
-            return {
-                id: registeredUser.id,
-                name: registeredUser.name,
-                email: registeredUser.email,
-                token: null,
-                createdAt: registeredUser.createdAt,
-                updatedAt: registeredUser.updatedAt
-            }
-        } else if (type == 'Instructor') {
-            const user = new Instructor()
-            user.name = name
-            user.email = email
-            // user.publicAddress = publicAddress
-            user.password = this.jwtService.encodePassword(password)
-            const registeredUser = await this.insturctorRepository.save(user)
-            return {
-                id: registeredUser.id,
-                name: registeredUser.name,
-                email: registeredUser.email,
-                token: null,
-                createdAt: registeredUser.createdAt,
-                updatedAt: registeredUser.updatedAt
-            }
+        } catch (error) {
+            throw new BadRequestException("User couldn't be created")
         }
     }
 
@@ -162,7 +230,7 @@ export class AuthService {
         let user = null
         if (loginRequestDto.type == 'Instructor') {
             //find instructor
-            user = await this.insturctorRepository.findOne({
+            user = await this.instructorRepository.findOne({
                 where: { email: loginRequestDto.email },
                 relations: ['role']
             })
@@ -181,6 +249,7 @@ export class AuthService {
             // IF USER NOT FOUND
             return
         }
+        console.log('user', user)
 
         const isPasswordValid: boolean = this.jwtService.isPasswordValid(
             loginRequestDto.password,

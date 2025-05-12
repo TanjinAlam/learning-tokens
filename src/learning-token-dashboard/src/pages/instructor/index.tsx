@@ -9,6 +9,7 @@ import { useEffect } from "react";
 import Pagination from "../../components/Pagination";
 import { useSelector } from "react-redux";
 import { RootState } from "../../store";
+import { UserType } from "../../enums/roles.enum";
 const { Column, HeaderCell, Cell } = Table;
 const Instructor = () => {
   const auth = useSelector((state: RootState) => state.auth);
@@ -30,8 +31,8 @@ const Instructor = () => {
       isAdmin: false,
       isView: false,
       isWrite: true,
-      type: auth.user.type,
-      id: auth.user.id,
+      type: UserType.INSTITUTION,
+      id: rowData.id,
       functionName: "addInstructorToInstitution",
       params: [rowData.publicAddress, Date.now()],
     }).then(() => {

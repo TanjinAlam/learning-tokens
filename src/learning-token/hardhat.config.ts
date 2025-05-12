@@ -55,7 +55,7 @@ const config: HardhatUserConfig = {
     // },
     kaleido: {
       url: KALEIDO_RPC_URL,
-      chainId: 1513174332,
+      chainId: parseInt(KALEIDO_CHAIN_ID),
       accounts: [KALEIDO_PRIV_KEY],
       // gasPrice: 80000000, // adjust as necessary
       // gas: 124500 // adjust as necessary

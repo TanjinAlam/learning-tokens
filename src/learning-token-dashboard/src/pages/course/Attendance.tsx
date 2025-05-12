@@ -6,6 +6,10 @@ import Button from "../../components/Button";
 import SelectInput from "../../components/SelectInput";
 import { initWeb3 } from "../../utils";
 import toast from "react-hot-toast";
+import { RootState } from "../../store";
+import { useSelector } from "react-redux";
+import { useSmartContractCallInstitutionMutation } from "../../store/features/instructor/instructorApi";
+import { UserType } from "../../enums/roles.enum";
 
 const initialValues = {
   token_type: "attendance_token",
@@ -28,153 +32,323 @@ const validationSchema = object().shape({
 });
 const Attendance = () => {
   const formikRef = useRef<FormikProps<any>>(null);
-
+  const auth = useSelector((state: RootState) => state.auth);
+  const [smartContractCallInstitution] =
+    useSmartContractCallInstitutionMutation();
   const handleSubmit = async (values: any) => {
-    const contract = await initWeb3();
-
-    if (values.token_type === "attendance_token") {
-      const [_attendance] = values.attendance;
-      const tx = await contract!.mintAttendanceToken(
-        _attendance.learnerId,
-        _attendance.amount,
-        _attendance.courseId,
-        Date.now(),
-        _attendance.fieldOfKnowledge,
-        _attendance.skillName
-      );
-      if (tx) {
-        toast.success("Attendance Token minted");
-      }
+    console.log("  values._attendance[0].learnerId,");
+    switch (values.token_type) {
+      case "attendance_token":
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "mintAttendanceToken",
+          params: [
+            values.attendance[0].learnerId,
+            values.attendance[0].amount,
+            values.attendance[0].courseId,
+            Date.now(),
+            values.attendance[0].fieldOfKnowledge,
+            values.attendance[0].skillName,
+          ],
+        });
+        break;
+      case "batch_attendance_token":
+        values.attendance.map((item: any) => {
+          values._learnerIds.push(item.learnerId);
+          values._amounts.push(item.amount);
+        });
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "batchMintAttendanceToken",
+          params: [
+            values._learnerIds,
+            values._amounts,
+            values._attendance.courseId,
+            Date.now(),
+            values._attendance.fieldOfKnowledge,
+            values._attendance.skillName,
+          ],
+        });
+        break;
+      case "helping_token":
+        values.attendance.map((item: any) => {
+          values._learnerIds.push(item.learnerId);
+          values._amounts.push(item.amount);
+        });
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "mintHelpingToken",
+          params: [
+            values._attendance.learnerId,
+            values._attendance.amount,
+            values._attendance.courseId,
+            Date.now(),
+            values._attendance.fieldOfKnowledge,
+            values._attendance.skillName,
+          ],
+        });
+        break;
+      case "batch_helping_token":
+        values.attendance.map((item: any) => {
+          values._learnerIds.push(item.learnerId);
+          values._amounts.push(item.amount);
+        });
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "batchMintHelpingToken",
+          params: [
+            values._attendance.learnerIds,
+            values._attendance.amounts,
+            values._attendance.courseId,
+            Date.now(),
+            values._attendance.fieldOfKnowledge,
+            values._attendance.skillName,
+          ],
+        });
+        break;
+      case "score_token":
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "mintScoreToken",
+          params: [
+            values._attendance.learnerId,
+            values._attendance.amount,
+            values._attendance.courseId,
+            Date.now(),
+            values._attendance.fieldOfKnowledge,
+            values._attendance.skillName,
+          ],
+        });
+        break;
+      case "batch_score_token":
+        values.attendance.map((item: any) => {
+          values._learnerIds.push(item.learnerId);
+          values._amounts.push(item.amount);
+        });
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "batchMintScoreToken",
+          params: [
+            values._attendance.learnerIds,
+            values._attendance.amounts,
+            values._attendance.courseId,
+            Date.now(),
+            values._attendance.fieldOfKnowledge,
+            values._attendance.skillName,
+          ],
+        });
+        break;
+      case "instructorScore_token":
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "mintInstructorScoreToken",
+          params: [
+            values._attendance.learnerId,
+            values._attendance.amount,
+            values._attendance.courseId,
+            Date.now(),
+            values._attendance.fieldOfKnowledge,
+            values._attendance.skillName,
+          ],
+        });
+        break;
+      case "batch_instructorScore_token":
+        values.attendance.map((item: any) => {
+          values._learnerIds.push(item.learnerId);
+          values._amounts.push(item.amount);
+        });
+        smartContractCallInstitution({
+          isAdmin: false,
+          isView: false,
+          isWrite: true,
+          type: UserType.INSTRUCTOR,
+          id: auth.user.id,
+          functionName: "batchMintInstructorScoreToken",
+          params: [
+            values._attendance.learnerIds,
+            values._attendance.amounts,
+            values._attendance.courseId,
+            Date.now(),
+            values._attendance.fieldOfKnowledge,
+            values._attendance.skillName,
+          ],
+        });
+        break;
+      default:
+        break;
     }
-    if (values.token_type === "batch_attendance_token") {
-      const [_attendance] = values.attendance;
-      const _learnerIds: number[] = [];
-      const _amounts: number[] = [];
 
-      values.attendance.map((item: any) => {
-        _learnerIds.push(item.learnerId);
-        _amounts.push(item.amount);
-      });
+    // if (values.token_type === "attendance_token") {
+    //   const [_attendance] = values.attendance;
+    //   const tx = await contract!.mintAttendanceToken(
+    //     _attendance.learnerId,
+    //     _attendance.amount,
+    //     _attendance.courseId,
+    //     Date.now(),
+    //     _attendance.fieldOfKnowledge,
+    //     _attendance.skillName
+    //   );
+    //   if (tx) {
+    //     toast.success("Attendance Token minted");
+    //   }
+    // }
+    // if (values.token_type === "batch_attendance_token") {
+    //   const [_attendance] = values.attendance;
+    //   const _learnerIds: number[] = [];
+    //   const _amounts: number[] = [];
 
-      const tx = await contract!.batchMintAttendanceToken(
-        _learnerIds,
-        _amounts,
-        _attendance.courseId,
-        Date.now(),
-        _attendance.fieldOfKnowledge,
-        _attendance.skillName
-      );
-      if (tx) {
-        toast.success("Batch Attendance Token minted");
-      }
-    }
-    if (values.token_type === "helping_token") {
-      const [_attendance] = values.attendance;
-      const tx = await contract!.mintHelpingToken(
-        _attendance.learnerId,
-        _attendance.amount,
-        _attendance.courseId,
-        Date.now(),
-        _attendance.fieldOfKnowledge,
-        _attendance.skillName
-      );
-      if (tx) {
-        toast.success("Helping Token minted");
-      }
-    }
-    if (values.token_type === "batch_helping_token") {
-      const [_attendance] = values.attendance;
-      const _learnerIds: number[] = [];
-      const _amounts: number[] = [];
+    //   values.attendance.map((item: any) => {
+    //     _learnerIds.push(item.learnerId);
+    //     _amounts.push(item.amount);
+    //   });
 
-      values.attendance.map((item: any) => {
-        _learnerIds.push(item.learnerId);
-        _amounts.push(item.amount);
-      });
+    //   const tx = await contract!.batchMintAttendanceToken(
+    //     _learnerIds,
+    //     _amounts,
+    //     _attendance.courseId,
+    //     Date.now(),
+    //     _attendance.fieldOfKnowledge,
+    //     _attendance.skillName
+    //   );
+    //   if (tx) {
+    //     toast.success("Batch Attendance Token minted");
+    //   }
+    // }
+    // if (values.token_type === "helping_token") {
+    //   const [_attendance] = values.attendance;
+    //   const tx = await contract!.mintHelpingToken(
+    //     _attendance.learnerId,
+    //     _attendance.amount,
+    //     _attendance.courseId,
+    //     Date.now(),
+    //     _attendance.fieldOfKnowledge,
+    //     _attendance.skillName
+    //   );
+    //   if (tx) {
+    //     toast.success("Helping Token minted");
+    //   }
+    // }
+    // if (values.token_type === "batch_helping_token") {
+    //   const [_attendance] = values.attendance;
+    //   const _learnerIds: number[] = [];
+    //   const _amounts: number[] = [];
 
-      const tx = await contract!.batchMintHelpingToken(
-        _learnerIds,
-        _amounts,
-        _attendance.courseId,
-        Date.now(),
-        _attendance.fieldOfKnowledge,
-        _attendance.skillName
-      );
-      if (tx) {
-        toast.success("Batch Helping Token minted");
-      }
-    }
-    if (values.token_type === "score_token") {
-      const tx = await contract!.mintScoreToken(
-        values.attendance.learnerId,
-        values.attendance.amount,
-        values.attendance.courseId,
-        Date.now(),
-        values.attendance.fieldOfKnowledge,
-        values.attendance.skillName
-      );
+    //   values.attendance.map((item: any) => {
+    //     _learnerIds.push(item.learnerId);
+    //     _amounts.push(item.amount);
+    //   });
 
-      if (tx) {
-        toast.success("Score Token minted");
-      }
-    }
-    if (values.token_type === "batch_score_token") {
-      const [_attendance] = values.attendance;
-      const _learnerIds: number[] = [];
-      const _amounts: number[] = [];
+    //   const tx = await contract!.batchMintHelpingToken(
+    //     _learnerIds,
+    //     _amounts,
+    //     _attendance.courseId,
+    //     Date.now(),
+    //     _attendance.fieldOfKnowledge,
+    //     _attendance.skillName
+    //   );
+    //   if (tx) {
+    //     toast.success("Batch Helping Token minted");
+    //   }
+    // }
+    // if (values.token_type === "score_token") {
+    //   const tx = await contract!.mintScoreToken(
+    //     values.attendance.learnerId,
+    //     values.attendance.amount,
+    //     values.attendance.courseId,
+    //     Date.now(),
+    //     values.attendance.fieldOfKnowledge,
+    //     values.attendance.skillName
+    //   );
 
-      values.attendance.map((item: any) => {
-        _learnerIds.push(item.learnerId);
-        _amounts.push(item.amount);
-      });
-      const tx = await contract!.batchMintScoreToken(
-        _learnerIds,
-        _amounts,
-        _attendance.courseId,
-        Date.now(),
-        _attendance.fieldOfKnowledge,
-        _attendance.skillName
-      );
+    //   if (tx) {
+    //     toast.success("Score Token minted");
+    //   }
+    // }
+    // if (values.token_type === "batch_score_token") {
+    //   const [_attendance] = values.attendance;
+    //   const _learnerIds: number[] = [];
+    //   const _amounts: number[] = [];
 
-      if (tx) {
-        toast.success("Batch Score Token minted");
-      }
-    }
-    if (values.token_type === "instructorScore_token") {
-      const [_attendance] = values.attendance;
-      const tx = await contract!.mintInstructorScoreToken(
-        _attendance.learnerId,
-        _attendance.amount,
-        _attendance.courseId,
-        Date.now(),
-        _attendance.fieldOfKnowledge
-      );
+    //   values.attendance.map((item: any) => {
+    //     _learnerIds.push(item.learnerId);
+    //     _amounts.push(item.amount);
+    //   });
+    //   const tx = await contract!.batchMintScoreToken(
+    //     _learnerIds,
+    //     _amounts,
+    //     _attendance.courseId,
+    //     Date.now(),
+    //     _attendance.fieldOfKnowledge,
+    //     _attendance.skillName
+    //   );
 
-      if (tx) {
-        toast.success("Instructor Token minted");
-      }
-    }
-    if (values.token_type === "batch_instructorScore_token") {
-      const [_attendance] = values.attendance;
-      const _learnerIds: number[] = [];
-      const _amounts: number[] = [];
+    //   if (tx) {
+    //     toast.success("Batch Score Token minted");
+    //   }
+    // }
+    // if (values.token_type === "instructorScore_token") {
+    //   const [_attendance] = values.attendance;
+    //   const tx = await contract!.mintInstructorScoreToken(
+    //     _attendance.learnerId,
+    //     _attendance.amount,
+    //     _attendance.courseId,
+    //     Date.now(),
+    //     _attendance.fieldOfKnowledge
+    //   );
 
-      values.attendance.map((item: any) => {
-        _learnerIds.push(item.learnerId);
-        _amounts.push(item.amount);
-      });
-      const tx = await contract!.batchMintInstructorScoreToken(
-        _learnerIds,
-        _amounts,
-        _attendance.courseId,
-        Date.now(),
-        _attendance.fieldOfKnowledge
-      );
+    //   if (tx) {
+    //     toast.success("Instructor Token minted");
+    //   }
+    // }
+    // if (values.token_type === "batch_instructorScore_token") {
+    //   const [_attendance] = values.attendance;
+    //   const _learnerIds: number[] = [];
+    //   const _amounts: number[] = [];
 
-      if (tx) {
-        toast.success("Batch Instructor Token minted");
-      }
-    }
+    //   values.attendance.map((item: any) => {
+    //     _learnerIds.push(item.learnerId);
+    //     _amounts.push(item.amount);
+    //   });
+    //   const tx = await contract!.batchMintInstructorScoreToken(
+    //     _learnerIds,
+    //     _amounts,
+    //     _attendance.courseId,
+    //     Date.now(),
+    //     _attendance.fieldOfKnowledge
+    //   );
+
+    //   if (tx) {
+    //     toast.success("Batch Instructor Token minted");
+    //   }
+    // }
   };
 
   const handleFileChange = (e: any, formik: any) => {
@@ -336,7 +510,7 @@ const Attendance = () => {
                   type="file"
                   name="attendance"
                   onChange={(event) => handleFileChange(event, formik)}
-                  accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" 
+                  accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                 />
               </div>
             </div>
